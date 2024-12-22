@@ -1,9 +1,14 @@
+use std::borrow::Cow;
+
 use glfw::{Action, Context, GlfwReceiver, Key, PWindow, WindowEvent};
+
+use super::geometry::line::KLine;
 
 pub struct Window {
     glfw: glfw::Glfw,
-    window_handler: PWindow,
+    pub window_handler: PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
+    event_callbacks: Vec<Box<dyn FnMut(&glfw::WindowEvent) + Send>>
 }
 
 impl Window {
@@ -21,7 +26,8 @@ impl Window {
         Window {
             glfw,
             window_handler: window,
-            events
+            events,
+            event_callbacks: Vec::new()
         }
     }
 
@@ -42,16 +48,58 @@ impl Window {
     }
 
     pub fn update(&mut self) {
-        self.process_events();
+        self.process_events_no_cb();
         self.glfw.poll_events();
         self.window_handler.swap_buffers();
     }
 
-    fn process_events(&mut self) {
+    pub fn draw_grid(&mut self, rows: i32, cols: i32) {
+        let color = [1.0, 1.0, 1.0, 1.0]; 
+
+        for i in 0..rows {
+            let y = 1.0 - (i as f32) * (2.0 / (rows as f32 - 1.0));
+            let line = KLine::new(-1.0, y, 1.0, y, color); 
+            line.draw();
+        }
+        
+        for j in 0..cols {
+            let x = -1.0 + (j as f32) * (2.0 / (cols as f32 - 1.0));
+            let line = KLine::new(x, -1.0, x, 1.0, color);
+            line.draw();
+        }
+    }
+
+    pub fn is_key_down(&self, key: glfw::Key) -> bool {
+        self.window_handler.get_key(key) == glfw::Action::Press
+    }
+
+    pub fn process_events_no_cb(&mut self) {
         for (_, event) in glfw::flush_messages(&self.events) {
+            
+            for callback in &mut self.event_callbacks {
+                callback(&event);
+            }
+
             match event {
                 glfw::WindowEvent::FramebufferSize(width, height) => {
                     unsafe {gl::Viewport(0,0, width, height)}
+                }
+                
+                _ => {}
+            }
+        }
+    }
+
+    pub fn process_events<F>(&mut self, mut callback: F)
+    where
+        F: FnMut(&glfw::WindowEvent),
+    {
+        for (_, event) in glfw::flush_messages(&self.events) {
+            callback(&event);
+
+            match event {
+                glfw::WindowEvent::FramebufferSize(width, height) => {
+                    unsafe { gl::Viewport(0, 0, width, height) }
                 }
                 glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
                     self.window_handler.set_should_close(true);
