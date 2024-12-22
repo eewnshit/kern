@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use glfw::{Action, Context, GlfwReceiver, Key, PWindow, WindowEvent};
 
-use crate::logger::{LogLevel, Logger};
+use crate::{graphics::geometry::square::KSquare, logger::{LogLevel, Logger}};
 
 use super::geometry::line::KLine;
 
@@ -93,8 +93,39 @@ impl Window {
         }
     }
 
-    fn convert_to_grid_position(&self, pos_x: u32, pos_y: u32) {
+    pub fn convert_window_pos_to_grid_cell(&self, pos_x: u32, pos_y: u32) -> (f32, f32) {
+        let grid_size = self.get_grid_size();
+        let (grid_x, grid_y) = self.convert_to_grid_position(pos_x as u32, pos_y as u32);
 
+        let x_pos = grid_x + (grid_size.0 / 2.0);
+        let y_pos = grid_y + (grid_size.1 / 2.0);
+        let x_pos_rounded = (x_pos * (self.rows.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.rows.unwrap() as f32 - 1.0) / 2.0);
+        let y_pos_rounded = (y_pos * (self.cols.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.cols.unwrap() as f32 - 1.0) / 2.0);
+        (x_pos_rounded, y_pos_rounded)
+    }
+
+    pub fn convert_grid_pos_to_grid_cell(&self, norm_x: f32, norm_y: f32) -> (f32, f32) {
+        let grid_size = self.get_grid_size();
+    
+        let x_pos = norm_x * (grid_size.0 / 2.0);
+        let y_pos = norm_y * (grid_size.1 / 2.0);
+    
+        let x_pos_rounded = (x_pos * (self.rows.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.rows.unwrap() as f32 - 1.0) / 2.0);
+        let y_pos_rounded = (y_pos * (self.cols.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.cols.unwrap() as f32 - 1.0) / 2.0);
+    
+        (x_pos_rounded, y_pos_rounded)
+    }
+
+    pub fn convert_to_grid_position(&self, pos_x: u32, pos_y: u32) -> (f32, f32) {
+        let x_grid = 2.0 * (pos_x as f32) / (self.width as f32) - 1.0;
+        let y_grid = 1.0 - 2.0 * (pos_y as f32) / (self.height as f32);
+        (x_grid, y_grid)
+    }
+
+    pub fn get_grid_size(&self) -> (f32, f32) {
+        let grid_size_x = 2.0 / (self.cols.unwrap_or(1) as f32 - 1.0);
+        let grid_size_y = 2.0 / (self.rows.unwrap_or(1) as f32 - 1.0);
+        (grid_size_x, grid_size_y)
     }
 
     pub fn is_key_down(&self, key: glfw::Key) -> bool {
@@ -102,6 +133,7 @@ impl Window {
     }
 
     pub fn process_events_no_cb(&mut self) {
+        let mut qGrid = KSquare::new(3.0, 3.0, self.get_grid_size().0, [0.0, 1.0, 0.0, 1.0]);
         for (_, event) in glfw::flush_messages(&self.events) {
             
             for callback in &mut self.event_callbacks {
@@ -113,8 +145,9 @@ impl Window {
                     unsafe {gl::Viewport(0,0, width, height)}
                 }
                 glfw::WindowEvent::CursorPos(x, y) => {
-                    println!("Mouse moved to position: ({}, {})", x, y);
-                    // Adicione aqui qualquer lógica que você queira ao mover o mouse
+                    qGrid.x = self.convert_window_pos_to_grid_cell(x as u32, y as u32).0;
+                    qGrid.y = self.convert_window_pos_to_grid_cell(x as u32, y as u32).1;
+                    qGrid.draw();
                 }
                 _ => {}
             }
