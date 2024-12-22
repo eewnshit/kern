@@ -5,10 +5,10 @@ use gl::types::{GLfloat, GLsizei};
 use super::gl_wrapper::{BufferObject, ShaderProgram, Vao, VertexAttribute};
 
 pub struct Square {
-    x: f32,
-    y: f32,
-    size: f32,
-    color: [f32; 4]
+    pub x: f32,
+    pub y: f32,
+    pub size: f32,
+    pub color: [f32; 4]
 }
 
 
