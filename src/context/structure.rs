@@ -1,4 +1,4 @@
-use std::{any::Any, sync::Mutex};
+use std::{any::Any};
 
 #[derive(Debug)]
 pub struct KData<'a> {
@@ -11,7 +11,7 @@ impl<'a> Clone for KData<'a> {
     fn clone(&self) -> Self {
         KData {
             key: self.key,
-            value: self.value,  // Clona o valor (assumindo que `value` é clonável)
+            value: self.value,
         }
     }
 }
@@ -19,7 +19,7 @@ impl<'a> Clone for KData<'a> {
 #[derive(Debug)]
 pub struct KTable<'a> {
     pub size: usize,
-    pub cycles: Vec<Option<KData<'a>>>,  // Mudança: Option<KData> permite slots vazios (None)
+    pub cycles: Vec<Option<KData<'a>>>, 
 }
 
 impl<'a> KData<'a> {
@@ -76,12 +76,11 @@ impl<'a> KTable<'a> {
         let mut x: i32 = 0;
         let probing_index: usize = self.probing(index as usize, x, self.size) as usize;
 
-        // Realiza o probing para encontrar o item a ser removido
         while let Some(_slot) = self.cycles.get_mut(probing_index) {
             let current_index: usize = self.probing(index, x, self.size) as usize;
             if let Some(cycle) = &mut self.cycles[current_index] {
                 if cycle.key == key {
-                    self.cycles[current_index] = None;  // Marca o slot como vazio
+                    self.cycles[current_index] = None;
                     return;
                 }
             }
@@ -99,7 +98,6 @@ impl<'a> KTable<'a> {
     }
 
     fn probing(&self, index: usize, x: i32, size: usize) -> i32 {
-        // Linear probing: (index + x) % size
         ((index + x as usize) % size) as i32
     }
 }
