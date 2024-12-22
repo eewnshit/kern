@@ -7,19 +7,24 @@ pub struct Square {
     pub x: f32,
     pub y: f32,
     pub size: f32,
-    pub color: [f32; 4]
+    pub color: [f32; 4],
+    pub id: String,
 }
 
 
 impl Square {
 
-    pub fn new(x: f32, y: f32, size: f32, color: [f32; 4]) -> Self {
-        Self {
+    pub fn new(x: f32, y: f32, size: f32, color: [f32; 4], id: String) -> Self {
+        let new_one = Self {
             x,
             y,
             size,
-            color
-        }
+            color,
+            id
+        };
+
+
+        new_one
     }
 
     pub fn draw(&self) {
