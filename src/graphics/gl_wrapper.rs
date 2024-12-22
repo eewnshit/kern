@@ -1,8 +1,8 @@
 use core::panic;
 use std::{collections::HashMap, ffi::CString, fs::File, io::Read, mem, os::raw::c_void, ptr};
 
-use cgmath::Matrix;
-use gl::types::{GLboolean, GLenum, GLint, GLsizei, GLuint};
+use cgmath::{Matrix, Matrix4};
+use gl::types::{GLboolean, GLchar, GLenum, GLint, GLsizei, GLuint};
 
 pub struct Vao {
     id: gl::types::GLuint,
@@ -112,37 +112,25 @@ pub struct ShaderProgram {
     uniform_ids: HashMap<String, GLint>
 }
 
-#[allow(temporary_cstring_as_ptr)]
 impl ShaderProgram {
-    pub fn new(vertex_shader_path: &str, fragment_shader_path: &str) -> ShaderProgram {
-        let mut vertex_shader_file = File::open(vertex_shader_path)
-            .unwrap_or_else(|_| panic!("Failed to open {}", vertex_shader_path));
-
-        let mut fragment_shader_file = File::open(fragment_shader_path)
-            .unwrap_or_else(|_| panic!("Failed to open {}", fragment_shader_path));
-            
-        let mut vertex_shader_source = String::new();
-        let mut fragment_shader_source = String::new();
-
-        vertex_shader_file
-            .read_to_string(&mut vertex_shader_source)
-            .expect("Failed to read vertex shader");
-
-        fragment_shader_file
-            .read_to_string(&mut fragment_shader_source)
-            .expect("Failed to read vertex shader") ;           
-
+    // Modificado para aceitar o código dos shaders como strings
+    pub fn new(vertex_shader_source: &str, fragment_shader_source: &str) -> ShaderProgram {
         unsafe {
+            // Compilando o vertex shader
             let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
             let c_str_vert = CString::new(vertex_shader_source.as_bytes()).unwrap();
             gl::ShaderSource(vertex_shader, 1, &c_str_vert.as_ptr(), ptr::null());
             gl::CompileShader(vertex_shader);
+            Self::check_shader_compile(vertex_shader);
 
+            // Compilando o fragment shader
             let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
-            let c_str_vert = CString::new(fragment_shader_source.as_bytes()).unwrap();
-            gl::ShaderSource(fragment_shader, 1, &c_str_vert.as_ptr(), ptr::null());
+            let c_str_frag = CString::new(fragment_shader_source.as_bytes()).unwrap();
+            gl::ShaderSource(fragment_shader, 1, &c_str_frag.as_ptr(), ptr::null());
             gl::CompileShader(fragment_shader);
+            Self::check_shader_compile(fragment_shader);
 
+            // Criando o programa e associando os shaders
             let program_handle = gl::CreateProgram();
             gl::AttachShader(program_handle, vertex_shader);
             gl::AttachShader(program_handle, fragment_shader);
@@ -153,6 +141,27 @@ impl ShaderProgram {
             ShaderProgram {
                 program_handle,
                 uniform_ids: HashMap::new(),
+            }
+        }
+    }
+
+    // Função para verificar se o shader compilou corretamente
+    fn check_shader_compile(shader: u32) {
+        unsafe {
+            let mut success: i32 = 0;
+            gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
+            if success == 0 {
+                let mut log_len: i32 = 0;
+                gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut log_len);
+                let mut log: Vec<u8> = Vec::with_capacity(log_len as usize);
+                gl::GetShaderInfoLog(
+                    shader,
+                    log_len,
+                    &mut log_len,
+                    log.as_mut_ptr() as *mut GLchar,
+                );
+                log.set_len(log_len as usize);
+                panic!("Shader compilation failed: {}", String::from_utf8_lossy(&log));
             }
         }
     }
@@ -184,14 +193,14 @@ impl ShaderProgram {
         }
     }
 
-    pub fn set_matrix4fv_uniform(&self, uniform_name: &str, matrix: &cgmath::Matrix4<f32>)   {
+    pub fn set_matrix4fv_uniform(&self, uniform_name: &str, matrix: &Matrix4<f32>) {
         unsafe {
             gl::UniformMatrix4fv(
                 self.uniform_ids[uniform_name],
                 1,
                 gl::FALSE,
-                matrix.as_ptr()
-            )
+                matrix.as_ptr(),
+            );
         }
     }
 }
