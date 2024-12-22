@@ -2,13 +2,19 @@ use std::borrow::Cow;
 
 use glfw::{Action, Context, GlfwReceiver, Key, PWindow, WindowEvent};
 
+use crate::logger::{LogLevel, Logger};
+
 use super::geometry::line::KLine;
 
 pub struct Window {
     glfw: glfw::Glfw,
-    pub window_handler: PWindow,
+    window_handler: PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
-    event_callbacks: Vec<Box<dyn FnMut(&glfw::WindowEvent) + Send>>
+    event_callbacks: Vec<Box<dyn FnMut(&glfw::WindowEvent) + Send>>,
+    width: u32,
+    height: u32,
+    pub cols: Option<u32>,
+    pub rows: Option<u32>
 }
 
 impl Window {
@@ -27,7 +33,11 @@ impl Window {
             glfw,
             window_handler: window,
             events,
-            event_callbacks: Vec::new()
+            event_callbacks: Vec::new(),
+            width,
+            height,
+            cols: None,
+            rows: None
         }
     }
 
@@ -50,23 +60,41 @@ impl Window {
     pub fn update(&mut self) {
         self.process_events_no_cb();
         self.glfw.poll_events();
+        self.window_handler.set_cursor_pos_polling(true);
         self.window_handler.swap_buffers();
     }
 
-    pub fn draw_grid(&mut self, rows: i32, cols: i32) {
+    pub fn set_grid(&mut self, rows: u32, cols: u32) {
+        self.cols = Some(cols);
+        self.rows = Some(rows)
+    }
+
+    pub fn draw_grid(&mut self) {
         let color = [1.0, 1.0, 1.0, 1.0]; 
 
-        for i in 0..rows {
-            let y = 1.0 - (i as f32) * (2.0 / (rows as f32 - 1.0));
+        match (self.cols, self.rows) {
+            (None, None) => {
+                Logger::log(LogLevel::Error, "For draw_grid() first use set_grid(u32, u32)!");
+                panic!("DEFINE A GRID FIRST");
+            },
+            _ => {}
+        }
+
+        for i in 0..self.rows.unwrap() {
+            let y = 1.0 - (i as f32) * (2.0 / (self.rows.unwrap() as f32 - 1.0));
             let line = KLine::new(-1.0, y, 1.0, y, color); 
             line.draw();
         }
         
-        for j in 0..cols {
-            let x = -1.0 + (j as f32) * (2.0 / (cols as f32 - 1.0));
+        for j in 0..self.cols.unwrap() {
+            let x = -1.0 + (j as f32) * (2.0 / (self.cols.unwrap() as f32 - 1.0));
             let line = KLine::new(x, -1.0, x, 1.0, color);
             line.draw();
         }
+    }
+
+    fn convert_to_grid_position(&self, pos_x: u32, pos_y: u32) {
+
     }
 
     pub fn is_key_down(&self, key: glfw::Key) -> bool {
@@ -84,7 +112,10 @@ impl Window {
                 glfw::WindowEvent::FramebufferSize(width, height) => {
                     unsafe {gl::Viewport(0,0, width, height)}
                 }
-                
+                glfw::WindowEvent::CursorPos(x, y) => {
+                    println!("Mouse moved to position: ({}, {})", x, y);
+                    // Adicione aqui qualquer lógica que você queira ao mover o mouse
+                }
                 _ => {}
             }
         }
