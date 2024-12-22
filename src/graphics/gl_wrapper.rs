@@ -1,5 +1,5 @@
 use core::panic;
-use std::{collections::HashMap, ffi::CString, fs::File, io::Read, mem, os::raw::c_void, ptr};
+use std::{collections::HashMap, ffi::CString, mem, os::raw::c_void, ptr};
 
 use cgmath::{Matrix, Matrix4};
 use gl::types::{GLboolean, GLchar, GLenum, GLint, GLsizei, GLuint};
@@ -182,7 +182,7 @@ impl ShaderProgram {
         let uniform_location = unsafe {
             gl::GetUniformLocation(
                 self.program_handle,
-                CString::new(uniform_name).unwrap().as_ptr(),
+                CString::new(uniform_name).unwrap().as_c_str().as_ptr(),
             )
         };
         if uniform_location < 0 {

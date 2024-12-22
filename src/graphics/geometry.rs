@@ -1,4 +1,3 @@
-use std::{env, path::Path, thread::current};
 
 use gl::types::{GLfloat, GLsizei};
 

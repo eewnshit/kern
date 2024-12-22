@@ -1,5 +1,4 @@
-use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
-use std::sync::mpsc::Receiver;
+use glfw::{Action, Context, GlfwReceiver, Key, PWindow, WindowEvent};
 
 pub struct Window {
     glfw: glfw::Glfw,
