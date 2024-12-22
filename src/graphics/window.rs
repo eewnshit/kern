@@ -34,6 +34,13 @@ impl Window {
         self.window_handler.should_close()       
     }
 
+    pub fn clear(&self, background_color: [f32; 4]) {
+        unsafe {
+            gl::ClearColor(background_color[0], background_color[1], background_color[2], background_color[3]);
+            gl::Clear(gl::COLOR_BUFFER_BIT)
+        }
+    }
+
     pub fn update(&mut self) {
         self.process_events();
         self.glfw.poll_events();
