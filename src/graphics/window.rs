@@ -1,8 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, time::{Duration, Instant}};
 
 use glfw::{Action, Context, GlfwReceiver, Key, PWindow, WindowEvent};
 
-use crate::{graphics::geometry::square::KSquare, logger::{LogLevel, Logger}};
+use crate::{graphics::geometry::square::KSquare, logger::{self, LogLevel, Logger}};
 
 use super::geometry::line::KLine;
 
@@ -13,8 +13,13 @@ pub struct Window {
     event_callbacks: Vec<Box<dyn FnMut(&glfw::WindowEvent) + Send>>,
     width: u32,
     height: u32,
-    pub cols: Option<u32>,
-    pub rows: Option<u32>
+    pub cols: u32,
+    pub rows: u32,
+    fps_limit: Option<u32>,
+    last_frame_time: Instant,
+    grid_lines: Option<Vec<KLine>>,
+    cursor_pos_x: f32,
+    cursor_pos_y: f32,
 }
 
 impl Window {
@@ -36,8 +41,13 @@ impl Window {
             event_callbacks: Vec::new(),
             width,
             height,
-            cols: None,
-            rows: None
+            cols: 10,
+            rows: 10,
+            fps_limit: Some(120),
+            last_frame_time: Instant::now(),
+            grid_lines: None,
+            cursor_pos_x: 0.0,
+            cursor_pos_y: 0.0
         }
     }
 
@@ -62,34 +72,39 @@ impl Window {
         self.glfw.poll_events();
         self.window_handler.set_cursor_pos_polling(true);
         self.window_handler.swap_buffers();
+        self.enforce_fps_limit();
     }
 
     pub fn set_grid(&mut self, rows: u32, cols: u32) {
-        self.cols = Some(cols);
-        self.rows = Some(rows)
+        self.cols = cols;
+        self.rows = rows;
+        self.update_grid_lines();
     }
 
-    pub fn draw_grid(&mut self) {
-        let color = [1.0, 1.0, 1.0, 1.0]; 
+    pub fn update_grid_lines(&mut self) {
+        let mut lines = Vec::new();
+        let color = [1.0, 1.0, 1.0, 1.0];
+        let row_step = 2.0 / (self.rows as f32 - 1.0);
+        let col_step = 2.0 / (self.cols as f32 - 1.0);
 
-        match (self.cols, self.rows) {
-            (None, None) => {
-                Logger::log(LogLevel::Error, "For draw_grid() first use set_grid(u32, u32)!");
-                panic!("DEFINE A GRID FIRST");
-            },
-            _ => {}
+        for i in 0..self.rows {
+            let y = 1.0 - i as f32 * row_step;
+            lines.push(KLine::new(-1.0, y, 1.0, y, color));
         }
 
-        for i in 0..self.rows.unwrap() {
-            let y = 1.0 - (i as f32) * (2.0 / (self.rows.unwrap() as f32 - 1.0));
-            let line = KLine::new(-1.0, y, 1.0, y, color); 
-            line.draw();
+        for j in 0..self.cols {
+            let x = -1.0 + j as f32 * col_step;
+            lines.push(KLine::new(x, -1.0, x, 1.0, color));
         }
-        
-        for j in 0..self.cols.unwrap() {
-            let x = -1.0 + (j as f32) * (2.0 / (self.cols.unwrap() as f32 - 1.0));
-            let line = KLine::new(x, -1.0, x, 1.0, color);
-            line.draw();
+
+        self.grid_lines = Some(lines);
+    }
+
+    pub fn draw_grid(&self) {
+        if let Some(lines) = &self.grid_lines {
+            for line in lines {
+                line.draw();
+            }
         }
     }
 
@@ -99,8 +114,8 @@ impl Window {
 
         let x_pos = grid_x + (grid_size.0 / 2.0);
         let y_pos = grid_y + (grid_size.1 / 2.0);
-        let x_pos_rounded = (x_pos * (self.rows.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.rows.unwrap() as f32 - 1.0) / 2.0);
-        let y_pos_rounded = (y_pos * (self.cols.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.cols.unwrap() as f32 - 1.0) / 2.0);
+        let x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
+        let y_pos_rounded = (y_pos * (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
         (x_pos_rounded, y_pos_rounded)
     }
 
@@ -110,8 +125,8 @@ impl Window {
         let x_pos = norm_x * (grid_size.0 / 2.0);
         let y_pos = norm_y * (grid_size.1 / 2.0);
     
-        let x_pos_rounded = (x_pos * (self.rows.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.rows.unwrap() as f32 - 1.0) / 2.0);
-        let y_pos_rounded = (y_pos * (self.cols.unwrap() as f32 - 1.0) / 2.0).floor() / ((self.cols.unwrap() as f32 - 1.0) / 2.0);
+        let x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
+        let y_pos_rounded = (y_pos * (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
     
         (x_pos_rounded, y_pos_rounded)
     }
@@ -123,8 +138,8 @@ impl Window {
     }
 
     pub fn get_grid_size(&self) -> (f32, f32) {
-        let grid_size_x = 2.0 / (self.cols.unwrap_or(1) as f32 - 1.0);
-        let grid_size_y = 2.0 / (self.rows.unwrap_or(1) as f32 - 1.0);
+        let grid_size_x = 2.0 / (self.cols as f32 - 1.0);
+        let grid_size_y = 2.0 / (self.rows as f32 - 1.0);
         (grid_size_x, grid_size_y)
     }
 
@@ -133,7 +148,6 @@ impl Window {
     }
 
     pub fn process_events_no_cb(&mut self) {
-        let mut qGrid = KSquare::new(3.0, 3.0, self.get_grid_size().0, [0.0, 1.0, 0.0, 1.0]);
         for (_, event) in glfw::flush_messages(&self.events) {
             
             for callback in &mut self.event_callbacks {
@@ -145,12 +159,28 @@ impl Window {
                     unsafe {gl::Viewport(0,0, width, height)}
                 }
                 glfw::WindowEvent::CursorPos(x, y) => {
-                    qGrid.x = self.convert_window_pos_to_grid_cell(x as u32, y as u32).0;
-                    qGrid.y = self.convert_window_pos_to_grid_cell(x as u32, y as u32).1;
-                    qGrid.draw();
+                    let (grid_x, grid_y) = self.convert_window_pos_to_grid_cell(x as u32, y as u32);
+                    self.cursor_pos_x = grid_x;
+                    self.cursor_pos_y = grid_y;
                 }
                 _ => {}
             }
+        }
+    }
+
+    pub fn set_fps(&mut self, fps: u32) {
+        self.fps_limit = Some(fps);
+    }
+
+    fn enforce_fps_limit(&mut self) {
+        if let Some(fps) = self.fps_limit {
+            let frame_duration = Duration::from_secs_f32(1.0 / fps as f32);
+            let now = Instant::now();
+            let elapsed = now.duration_since(self.last_frame_time);
+            if elapsed < frame_duration {
+                std::thread::sleep(frame_duration - elapsed);
+            }
+            self.last_frame_time = Instant::now();
         }
     }
 
