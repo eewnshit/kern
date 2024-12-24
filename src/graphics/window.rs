@@ -46,8 +46,8 @@ impl Window {
             fps_limit: Some(120),
             last_frame_time: Instant::now(),
             grid_lines: None,
-            cursor_pos_x: 0.0,
-            cursor_pos_y: 0.0
+            cursor_pos_x: 900.0,
+            cursor_pos_y: 900.0
         }
     }
 
@@ -80,8 +80,8 @@ impl Window {
     }
 
     pub fn set_grid(&mut self, rows: u32, cols: u32) {
-        self.cols = cols;
-        self.rows = rows;
+        self.cols = cols + 1;
+        self.rows = rows + 1;
         self.update_grid_lines();
     }
 
@@ -119,20 +119,25 @@ impl Window {
         let mut x_pos = grid_x + (grid_size.0 / 2.0);
         let mut y_pos = grid_y + (grid_size.1 / 2.0);
 
-        // this works for even numbers
         let mut x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
         let mut y_pos_rounded = (y_pos* (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
 
-        // nahhhh, this shit don't work even for odd numbers
         if self.rows % 2 != 0 && self.cols % 2 != 0 {
-            x_pos = grid_x + (grid_size.0 + 1.0) / 2.0;
-            y_pos = grid_y + (grid_size.1 + 1.0) / 2.0;
-            x_pos_rounded = (x_pos * (self.rows as f32 - 1.0)).floor() / ((self.rows as f32 - 1.0));
-            y_pos_rounded = (y_pos * (self.cols as f32 - 1.0)).floor() / ((self.cols as f32 - 1.0));
-            println!("x_pos: {} - y_pos: {}", x_pos_rounded, y_pos_rounded);
+            let x_cell = (grid_x / grid_size.0).floor();
+            let y_cell = (grid_y / grid_size.1).floor();
+            
+            x_pos_rounded = (x_cell * grid_size.0) + (grid_size.0 / 2.0);
+            y_pos_rounded = (y_cell * grid_size.1) + (grid_size.1 / 2.0);
+            
+            println!("Snapped to cell center -> x_pos: {} - y_pos: {}", x_pos_rounded, y_pos_rounded);
         }
         
+
         (x_pos_rounded, y_pos_rounded)
+    }
+
+    pub fn set_resizable(&mut self, resizable: bool) {
+        self.window_handler.set_resizable(resizable);
     }
 
     pub fn convert_grid_pos_to_grid_cell(&self, norm_x: f32, norm_y: f32) -> (f32, f32) {
