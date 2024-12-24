@@ -127,6 +127,10 @@ impl KImage {
         self.shader_program.bind();
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, self.texture_id);
+            gl::GenerateMipmap(gl::TEXTURE_2D);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+        
         }
 
         self.vao.bind();
