@@ -18,8 +18,8 @@ pub struct Window {
     fps_limit: Option<u32>,
     last_frame_time: Instant,
     grid_lines: Option<Vec<KLine>>,
-    cursor_pos_x: f32,
-    cursor_pos_y: f32,
+    pub cursor_pos_x: f32,
+    pub cursor_pos_y: f32,
 }
 
 impl Window {
@@ -54,6 +54,10 @@ impl Window {
     pub fn init_gl(&mut self) {
         self.window_handler.make_current();
         gl::load_with(|s| self.window_handler.get_proc_address(s) as *const _);
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
     }
 
     pub fn should_close(&self) -> bool {
@@ -112,10 +116,22 @@ impl Window {
         let grid_size = self.get_grid_size();
         let (grid_x, grid_y) = self.convert_to_grid_position(pos_x as u32, pos_y as u32);
 
-        let x_pos = grid_x + (grid_size.0 / 2.0);
-        let y_pos = grid_y + (grid_size.1 / 2.0);
-        let x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
-        let y_pos_rounded = (y_pos * (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
+        let mut x_pos = grid_x + (grid_size.0 / 2.0);
+        let mut y_pos = grid_y + (grid_size.1 / 2.0);
+
+        // this works for even numbers
+        let mut x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
+        let mut y_pos_rounded = (y_pos* (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
+
+        // nahhhh, this shit don't work even for odd numbers
+        if self.rows % 2 != 0 && self.cols % 2 != 0 {
+            x_pos = grid_x + (grid_size.0 + 1.0) / 2.0;
+            y_pos = grid_y + (grid_size.1 + 1.0) / 2.0;
+            x_pos_rounded = (x_pos * (self.rows as f32 - 1.0)).floor() / ((self.rows as f32 - 1.0));
+            y_pos_rounded = (y_pos * (self.cols as f32 - 1.0)).floor() / ((self.cols as f32 - 1.0));
+            println!("x_pos: {} - y_pos: {}", x_pos_rounded, y_pos_rounded);
+        }
+        
         (x_pos_rounded, y_pos_rounded)
     }
 

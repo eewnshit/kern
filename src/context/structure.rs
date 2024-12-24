@@ -1,11 +1,10 @@
-use std::{any::Any};
+use std::any::Any;
 
 #[derive(Debug)]
 pub struct KData<'a> {
     pub key: &'a str,
     pub value: &'a dyn Any,
 }
-
 
 impl<'a> Clone for KData<'a> {
     fn clone(&self) -> Self {
