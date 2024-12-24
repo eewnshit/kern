@@ -116,8 +116,8 @@ impl Window {
         let grid_size = self.get_grid_size();
         let (grid_x, grid_y) = self.convert_to_grid_position(pos_x as u32, pos_y as u32);
 
-        let mut x_pos = grid_x + (grid_size.0 / 2.0);
-        let mut y_pos = grid_y + (grid_size.1 / 2.0);
+        let x_pos = grid_x + (grid_size.0 / 2.0);
+        let y_pos = grid_y + (grid_size.1 / 2.0);
 
         let mut x_pos_rounded = (x_pos * (self.rows as f32 - 1.0) / 2.0).floor() / ((self.rows as f32 - 1.0) / 2.0);
         let mut y_pos_rounded = (y_pos* (self.cols as f32 - 1.0) / 2.0).floor() / ((self.cols as f32 - 1.0) / 2.0);
@@ -129,7 +129,7 @@ impl Window {
             x_pos_rounded = (x_cell * grid_size.0) + (grid_size.0 / 2.0);
             y_pos_rounded = (y_cell * grid_size.1) + (grid_size.1 / 2.0);
             
-            println!("Snapped to cell center -> x_pos: {} - y_pos: {}", x_pos_rounded, y_pos_rounded);
+            println!("x_pos: {} - y_pos: {}", x_pos_rounded, y_pos_rounded);
         }
         
 

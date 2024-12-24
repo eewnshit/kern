@@ -13,6 +13,7 @@ pub struct KLine {
     shader_program: ShaderProgram,
 }
 
+
 impl KLine {
     pub fn new(x1: f32, y1: f32, x2: f32, y2: f32, color: [f32; 4]) -> Self {
         let vertices: [f32; 14] = [

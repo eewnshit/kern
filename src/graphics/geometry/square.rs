@@ -2,6 +2,7 @@
 use gl::types::{GLfloat, GLsizei};
 
 use crate::graphics::gl_wrapper::{BufferObject, ShaderProgram, Vao, VertexAttribute};
+use super::PhysicalObject;
 
 pub struct KSquare {
     pub x: f32,
@@ -13,6 +14,8 @@ pub struct KSquare {
     ibo: BufferObject,
     shader_program: ShaderProgram,
 }
+
+
 
 impl KSquare {
     pub fn new(x: f32, y: f32, size: f32, color: [f32; 4]) -> Self {
@@ -125,5 +128,9 @@ impl KSquare {
             );
         }
         self.vao.unbind();
+    }
+    
+    fn is_colliding(&self) {
+        todo!()
     }
 }
