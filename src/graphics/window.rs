@@ -18,6 +18,8 @@ pub struct Window {
     fps_limit: Option<u32>,
     last_frame_time: Instant,
     grid_lines: Option<Vec<KLine>>,
+    pub cursor_pos_cell_x: f32,
+    pub cursor_pos_cell_y: f32,
     pub cursor_pos_x: f32,
     pub cursor_pos_y: f32,
 }
@@ -47,7 +49,9 @@ impl Window {
             last_frame_time: Instant::now(),
             grid_lines: None,
             cursor_pos_x: 900.0,
-            cursor_pos_y: 900.0
+            cursor_pos_y: 900.0,
+            cursor_pos_cell_x: 900.0,
+            cursor_pos_cell_y: 900.0
         }
     }
 
@@ -185,7 +189,11 @@ impl Window {
                     unsafe {gl::Viewport(0,0, width, height)}
                 }
                 glfw::WindowEvent::CursorPos(x, y) => {
-                    let (grid_x, grid_y) = self.convert_window_pos_to_grid_cell(x as u32, y as u32);
+                    let (cell_x, cell_y) = self.convert_window_pos_to_grid_cell(x as u32, y as u32);
+                    let (grid_x, grid_y) = self.convert_to_grid_position(x as u32, y as u32);
+                    
+                    self.cursor_pos_cell_x = cell_x;
+                    self.cursor_pos_cell_y = cell_y;
                     self.cursor_pos_x = grid_x;
                     self.cursor_pos_y = grid_y;
                 }
