@@ -96,7 +96,6 @@ impl KSquare {
     }
 
     pub fn draw(&mut self) {
-        // Atualiza os vértices com as novas posições
         let half_size = self.size / 2.0;
         let vertices: [f32; 28] = [
             self.x + half_size, self.y + half_size, 0.0, self.color[0], self.color[1], self.color[2], self.color[3],
@@ -105,7 +104,6 @@ impl KSquare {
             self.x - half_size, self.y + half_size, 0.0, self.color[0], self.color[1], self.color[2], self.color[3],
         ];
     
-        // Atualiza o VBO com os novos dados de vértices
         self.vbo.bind();
         unsafe {
             gl::BufferSubData(
@@ -116,7 +114,6 @@ impl KSquare {
             );
         }
     
-        // Desenha o quadrado
         self.shader_program.bind();
         self.vao.bind();
         unsafe {

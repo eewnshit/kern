@@ -16,8 +16,8 @@ pub struct KLine {
 impl KLine {
     pub fn new(x1: f32, y1: f32, x2: f32, y2: f32, color: [f32; 4]) -> Self {
         let vertices: [f32; 14] = [
-            x1, y1, 0.0, color[0], color[1], color[2], color[3], // Ponto 1
-            x2, y2, 0.0, color[0], color[1], color[2], color[3], // Ponto 2
+            x1, y1, 0.0, color[0], color[1], color[2], color[3],
+            x2, y2, 0.0, color[0], color[1], color[2], color[3],
         ];
 
         let indices = [0, 1];
@@ -57,7 +57,6 @@ impl KLine {
         vbo.unbind();
         ibo.unbind();
 
-        // Criação do programa de shader
         let vertex_shader_source = r#"
             #version 330 core
             layout(location = 0) in vec3 aPos;

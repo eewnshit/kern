@@ -113,24 +113,20 @@ pub struct ShaderProgram {
 }
 
 impl ShaderProgram {
-    // Modificado para aceitar o código dos shaders como strings
     pub fn new(vertex_shader_source: &str, fragment_shader_source: &str) -> ShaderProgram {
         unsafe {
-            // Compilando o vertex shader
             let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
             let c_str_vert = CString::new(vertex_shader_source.as_bytes()).unwrap();
             gl::ShaderSource(vertex_shader, 1, &c_str_vert.as_ptr(), ptr::null());
             gl::CompileShader(vertex_shader);
             Self::check_shader_compile(vertex_shader);
 
-            // Compilando o fragment shader
             let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
             let c_str_frag = CString::new(fragment_shader_source.as_bytes()).unwrap();
             gl::ShaderSource(fragment_shader, 1, &c_str_frag.as_ptr(), ptr::null());
             gl::CompileShader(fragment_shader);
             Self::check_shader_compile(fragment_shader);
 
-            // Criando o programa e associando os shaders
             let program_handle = gl::CreateProgram();
             gl::AttachShader(program_handle, vertex_shader);
             gl::AttachShader(program_handle, fragment_shader);
@@ -145,7 +141,6 @@ impl ShaderProgram {
         }
     }
 
-    // Função para verificar se o shader compilou corretamente
     fn check_shader_compile(shader: u32) {
         unsafe {
             let mut success: i32 = 0;
