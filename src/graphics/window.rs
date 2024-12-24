@@ -91,6 +91,7 @@ impl Window {
         let row_step = 2.0 / (self.rows as f32 - 1.0);
         let col_step = 2.0 / (self.cols as f32 - 1.0);
 
+
         for i in 0..self.rows {
             let y = 1.0 - i as f32 * row_step;
             lines.push(KLine::new(-1.0, y, 1.0, y, color));
@@ -102,6 +103,10 @@ impl Window {
         }
 
         self.grid_lines = Some(lines);
+    }
+
+    pub fn disable_cursor(&mut self) {
+        self.window_handler.set_cursor_mode(glfw::CursorMode::Hidden);
     }
 
     pub fn draw_grid(&self) {
